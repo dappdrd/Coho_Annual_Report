@@ -17,7 +17,7 @@ library(reshape2)
 library(readxl)
 
 
-token <- readRDS("droptoken.rds")
+token <- readRDS("droptoken_PSC_CoTC_Dropbox.rds")
 drop_acc(dtoken = token)
 
 shinyServer(
@@ -69,7 +69,7 @@ shinyServer(
       
       textInput("PasswordAdd", "Please enter password to access program functions", ""),
       textInput("YearAdd", "Please choose a year to create an annual report for", ""),
-      selectInput("TAMMAdd", "Use TAMM to update coastal stocks/catch?", choice = c("Yes", "No")),
+      selectInput("TAMMAdd", "Use TAMM to update coastal stocks/catch?", choice = c("Yes - All Stocks", "Yes - Queets Only", "No")),
       #Adds a dropdown box
       actionButton("DataProcessButton",label = "Process data/create output"),
 
