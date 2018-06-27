@@ -1,3 +1,9 @@
+####################################################################################################
+# CoTC Annual Report code.  Server.R must be paired with Ui.R
+# Code developed by Derek Dapp (WDFW), Angelika Hagen-breaux (WDFW), and the CoTC
+# App hosted by Shiny Servers
+####################################################################################################
+
 #used for sending emails
 library(mailR)
 #used for shiny

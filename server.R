@@ -1,3 +1,9 @@
+####################################################################################################
+# CoTC Annual Report code.  Server.R must be paired with Ui.R
+# Code developed by Derek Dapp (WDFW), Angelika Hagen-breaux (WDFW), and the CoTC
+# App hosted by Shiny Servers
+####################################################################################################
+
 #used for sending emails
 library(mailR)
 #used for shiny
@@ -23,7 +29,7 @@ FinalRunList <<- c("BASE.Cmd", "CB86.Cmd", "CB87.Cmd", "CB88.Cmd", "CB89.Cmd", "
                   "CB96.Cmd", "CB97.Cmd", "BK98 w UF H&W", "BK99 w UF H&W", "BK00 w UF H&W", "BK01 w UF H&W Reload Catches", "BK02 w UF H&W Reload catches",
                   "BK03 w catches and BC cohorts", "BK04 w catches BCcohorts", "BK05 w catches and BC cohorts", "BK06 w catches and BC cohorts", 
                   "BK07 catches and BC cohorts", "BK08.cmd", "BK09 New CNR", "bk10PSCFeb14", "Coho2011Post_PSC 2013", "Coho2012Post_PSC SSNPx2 Q Aug 22 BC MSF corrected",
-                  "bk 2013 Feb 11 2015 adjust GB recruits", "bc-BK2014 w TAMM inputs final#2", "bc-bkCoho2015 Final")
+                  "bk 2013 Feb 11 2015 adjust GB recruits", "bc-BK2014 w TAMM inputs final#2", "bc-bkCoho2015 Final", "bc-BK2016 BPMar2013 Feb14")
 
 #This sets up a stock DF that has all the necessary stock information to be used later
 #LAC = Low Abundance Cohort; UAC = Upper Abundance Cohort; LAMO = Low Abundance Management Objective (cap); MAMO = Moderate Abundance Management Objective,
@@ -257,7 +263,7 @@ function(input, output, session){
               if (is.na(TAMMRow$PreTAMM[1]) == FALSE){
                 filePath <- file.path(tempdir(), "Pre_TAMM.xlsm")
                 drop_download(paste("Input Files/TAMMs/", TAMMRow$PreTAMM[1], sep = ""), local_path = filePath, overwrite = TRUE, dtoken = token)
-                PreTAMMDF <- read_xlsx(filePath, sheet = '2')
+                PreTAMMDF <<- read_xlsx(filePath, sheet = '2')
             
                 for (i in 1:length(CoastalStockList)){
                   #This subsets data frames to get the list of terminal fisheries and FRAMIDs for the stock
@@ -280,6 +286,11 @@ function(input, output, session){
                   #FW net and sport are combined in table 3 so no need to differentiate between the two
                   PreMortTab$TotMort[TermFishLocations[1]] <- as.numeric(PreTAMMDF[37,TAMMLocation]) + as.numeric(PreTAMMDF[38,TAMMLocation])
                   
+                  #For Gray's Harbor, there is also FW Net
+                  if(CoastalStockList[i] == "Grays Harbor"){
+                    PreMortTab$TotMort[TermFishLocations[1]] <- PreMortTab$TotMort[TermFishLocations[1]] + as.numeric(PreTAMMDF[36,TAMMLocation])
+                  }
+                  
                   #Finds the location in PreEscTab of the given stock
                   EscLocations <- which(PreEscTab$StockID %in% CoastalFRAMStks)
                   
@@ -294,35 +305,117 @@ function(input, output, session){
                 
                 filePath <- file.path(tempdir(), "Post_TAMM.xlsm")
                 drop_download(paste("Input Files/TAMMs/", TAMMRow$PostTAMM[1], sep = ""), local_path = filePath, overwrite = TRUE, dtoken = token)
-                PostTAMMDF <- read_xlsx(filePath, sheet = '2')
+                PostTAMMDF <<- read_xlsx(filePath, sheet = '2')
                 
-                for (i in 1:length(CoastalStockList)){
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                ##############################
+                #Added the code below for a run on 2/14/2018
+                #It makes it so that post-season only does coastal iterations for Queets...
+                #To do coastal iterations for all stocks, please delete lines 320-348 and
+                #remove comments from lines 370 to 397.
+                CoastalStockList2 <- c("Queets")
+
+                for (i in 1:length(CoastalStockList2)){
                   #This subsets data frames to get the list of terminal fisheries and FRAMIDs for the stock
-                  TerminalFisheriesList <- unique(subset(CoastalTermFishDF, Stock == CoastalStockList[i])$TerminalFish)
-                  CoastalFRAMStks <- unique(subset(StockDF, StockName == CoastalStockList[i])$FRAMWildStocks)
-                  
+                  TerminalFisheriesList <- unique(subset(CoastalTermFishDF, Stock == CoastalStockList2[i])$TerminalFish)
+                  CoastalFRAMStks <- unique(subset(StockDF, StockName == CoastalStockList2[i])$FRAMWildStocks)
+
                   #This gets the column number for the stock in table 2 of TAMM
-                  TAMMLocation <- subset(CoastalTermFishDF, Stock == CoastalStockList[i])$TAMMPosition[1]
-                  
+                  TAMMLocation <- subset(CoastalTermFishDF, Stock == CoastalStockList2[i])$TAMMPosition[1]
+
                   #This changes the total mortality of any terminal fisheries for a given stock to 0
                   MortTab$TotMort[MortTab$StockID %in% CoastalFRAMStks & MortTab$FisheryID %in% TerminalFisheriesList] <- 0
-                  
+
                   #This changes the escapement a given stock to 0
                   EscTab$Escapement[EscTab$StockID %in% CoastalFRAMStks] <- 0
-                  
+
                   #Finds the location in PostMortTab of the terminal fisheries rows for a given stock
                   TermFishLocations <- which(MortTab$StockID %in% CoastalFRAMStks & MortTab$FisheryID %in% TerminalFisheriesList)
-                  
+
                   #Lumps together FW Sport and Net catches into the first row that has a terminal fishery
                   #FW net and sport are combined in table 3 so no need to differentiate between the two
                   MortTab$TotMort[TermFishLocations[1]] <- as.numeric(PostTAMMDF[37,TAMMLocation]) + as.numeric(PostTAMMDF[38,TAMMLocation])
-                  
+
                   #Finds the location in PostEscTab of the given stock
                   EscLocations <- which(EscTab$StockID %in% CoastalFRAMStks)
-                  
+
                   #Adds in Escapement, like the above, it just sticks it into the first slot if there are multiple stocks
                   EscTab$Escapement[EscLocations[1]] <- as.numeric(PostTAMMDF[47,TAMMLocation])
                 }
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                # 
+                # for (i in 1:length(CoastalStockList)){
+                #   #This subsets data frames to get the list of terminal fisheries and FRAMIDs for the stock
+                #   TerminalFisheriesList <- unique(subset(CoastalTermFishDF, Stock == CoastalStockList[i])$TerminalFish)
+                #   CoastalFRAMStks <- unique(subset(StockDF, StockName == CoastalStockList[i])$FRAMWildStocks)
+                #   
+                #   #This gets the column number for the stock in table 2 of TAMM
+                #   TAMMLocation <- subset(CoastalTermFishDF, Stock == CoastalStockList[i])$TAMMPosition[1]
+                #   
+                #   #This changes the total mortality of any terminal fisheries for a given stock to 0
+                #   MortTab$TotMort[MortTab$StockID %in% CoastalFRAMStks & MortTab$FisheryID %in% TerminalFisheriesList] <- 0
+                #   
+                #   #This changes the escapement a given stock to 0
+                #   EscTab$Escapement[EscTab$StockID %in% CoastalFRAMStks] <- 0
+                #   
+                #   #Finds the location in PostMortTab of the terminal fisheries rows for a given stock
+                #   TermFishLocations <- which(MortTab$StockID %in% CoastalFRAMStks & MortTab$FisheryID %in% TerminalFisheriesList)
+                #   
+                #   #Lumps together FW Sport and Net catches into the first row that has a terminal fishery
+                #   #FW net and sport are combined in table 3 so no need to differentiate between the two
+                #   MortTab$TotMort[TermFishLocations[1]] <- as.numeric(PostTAMMDF[37,TAMMLocation]) + as.numeric(PostTAMMDF[38,TAMMLocation])
+                
+                #if(CoastalStockList[i] == "Grays Harbor"){
+                #  MortTab$TotMort[TermFishLocations[1]] <- MortTab$TotMort[TermFishLocations[1]] + as.numeric(PostTAMMDF[36,TAMMLocation])
+                #}
+                #   
+                #   #Finds the location in PostEscTab of the given stock
+                #   EscLocations <- which(EscTab$StockID %in% CoastalFRAMStks)
+                #   
+                #   #Adds in Escapement, like the above, it just sticks it into the first slot if there are multiple stocks
+                #   EscTab$Escapement[EscLocations[1]] <- as.numeric(PostTAMMDF[47,TAMMLocation])
+                # }
+                
+                
+                
+                
+                
+                
               }
             }
             
@@ -991,7 +1084,7 @@ function(input, output, session){
            
            SEAKRow <- data.frame(Fishery = "SEAK All", FRAMFish = c(194, 195, 196, 197, 198))
            WAOceanTrlRow <- data.frame(Fishery = "WA Ocean Troll", FRAMFish = c(34, 35, 36, 38, 39, 42, 43, 79))
-           WAOceanSportRow <- data.frame(Fishery = "WA Ocean Sport", FRAMFish = c(33, 37, 40, 41, 45, 48, 49))
+           WAOceanSportRow <- data.frame(Fishery = "WA Ocean Sport", FRAMFish = c(33, 37, 40, 41, 45))
            SofFRow <- data.frame(Fishery = "S of Falcon All", FRAMFish = c(1,2,3,4,5,6,7,8,9,19,11,12,13,14,15,16,17,18,19,20,21,22))
            USJDFRow <- data.frame(Fishery = "U.S. JDF All", FRAMFish = c(44,80,81,91,92))
            SJINetRow <- data.frame(Fishery = "San Juan Isl Net", FRAMFish = c(87,88,96,97))
@@ -1000,7 +1093,7 @@ function(input, output, session){
            PSNetRow <- data.frame(Fishery = "PS Net (8-13)", FRAMFish = c(101,102,109,110,111,112,119,120,121,122,123,124,125,130,
                                                                           131,132,133,137,138,139,140,141,142,143,144,145,146,153,
                                                                           154,155,156,157,158,159,160))
-           FWRow <- data.frame(Fishery = "FW Net & Sport", FRAMFish = c(23,24,25,26,27,28,29,30,31,32,46,47,50,51,52,53,54,55,56,57,58,
+           FWRow <- data.frame(Fishery = "FW Net & Sport", FRAMFish = c(23,24,25,26,27,28,29,30,31,32,46,47,48,49,50,51,52,53,54,55,56,57,58,
                                                                         59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,82,83,
                                                                         84,85,86,89,90,94,95,98,99,100,103,104,105,108,113,114,116,117,126,127,128,
                                                                         134,135,147,148,149,150,151,161,162,163,164,165,166))
